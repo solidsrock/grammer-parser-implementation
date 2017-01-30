@@ -1,0 +1,47 @@
+sub FollowSet {
+
+	# First put $ (the end of input marker) in Follow(S) (S is the start symbol)
+	my $countChanged = 0;
+	foreach my $A (@producs) {
+		my @B   = @$A;
+		my $len = @B;
+		for ( my $i = $len - 2 ; $i > 1 ; $i-- ) {
+			if ( is_member( $B[$i], @VN ) ) {
+
+		   # If there is a production A → aBb, (where a can be a whole string)
+		   # then everything in FIRST(b) except for ε is placed in FOLLOW(B).
+				if ( $i + 1 < $len ) {
+					if ( is_member( $B[ $i + 1 ], @VN ) ) {    #非终结符
+						$countChanged += myPush3(
+							$followSets{ $B[$i] },
+							$firstSets{ $B[ $i + 1 ] }
+						);
+					}
+					else {                                     #终结符
+						$countChanged +=
+						  myPush2( $followSets{ $B[$i] }, $B[ $i + 1 ] );
+					}
+				}
+			}
+		}
+		if ( $len - 1 > 0 ) {
+			if ( is_member( $B[ $len - 1 ], @VN ) ) {
+
+# If there is a production A → aB, then everything in FOLLOW(A) is in FOLLOW(B)
+				$countChanged +=
+				  myPush3( $followSets{ $B[ $len - 1 ] },
+					$followSets{ $B[0] } );
+				if ( ( $len - 2 > 0 )
+					and is_member( 'ε', @{ $firstSets{ $B[ $len - 1 ] } } ) )
+				{
+
+			   # If there is a production A → aBb, where FIRST(b) contains ε,
+			   # then everything in FOLLOW(A) is in FOLLOW(B)
+					$countChanged += myPush3( $followSets{ $B[ $len - 2 ] },
+						$followSets{ $B[0] } );
+				}
+			}
+		}
+	}
+	return $countChanged;
+}
